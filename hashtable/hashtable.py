@@ -17,7 +17,7 @@ class HashTable:
     """
     def __init__(self, capacity):
         self.capacity = capacity
-        self.hash_table = [None] * capacity
+        self.storage = [None] * capacity
 
     def fnv1(self, key):
         """
@@ -40,6 +40,7 @@ class HashTable:
         Take an arbitrary key and return a valid integer index
         between within the storage capacity of the hash table.
         """
+        #return self.fnv1(key) % self.capacity
         return self.djb2(key) % self.capacity
 
     def put(self, key, value):
@@ -49,13 +50,22 @@ class HashTable:
         Implement this.
         """
         index = self.hash_index(key)
+        current = self.storage[index]
+        if current is None:
+            self.storage[index] = HashTableEntry(key, value)
+            return
 
-        if self.hash_table[index] is None:
-            self.hash_table[index] = HashTableEntry(key, value)
-        else:
-            current_node = self.hash_table[index]
-            self.hash_table[index] = HashTableEntry(key, value)
-            self.hash_table[index].next = current_node
+        if current.key == key:
+            current.value = value
+            return
+
+        while current.next is not None:
+            if current.next.key == key:
+                current.next.value = value
+                return
+            current = current.next
+
+        current.next = HashTableEntry(key, value)
 
 
     def delete(self, key):
@@ -65,8 +75,18 @@ class HashTable:
         Implement this.
         """
 
-        index = self.hash_index(key)
-        self.hash_table[index] = None
+        current = self.storage[self.hash_index(key)]
+
+        while current.key != key:
+            if current.next is None:
+                return False
+            current = current.next
+
+        current_value = None
+        if current.key == key:
+            current_value = current.value
+            current.value = None
+        return current_value
 
     def get(self, key):
         """
@@ -74,8 +94,18 @@ class HashTable:
         Returns None if the key is not found.
         Implement this.
         """
+
         index = self.hash_index(key)
-        return self.hash_table[index].value
+        current = self.storage[index]
+
+        if current is None:
+            return False
+        while current.key != key:
+            if current.next is None:
+                return False
+            current = current.next
+        return current.value
+
 
     def resize(self):
         """
